@@ -218,6 +218,151 @@ begin
 end;
 $$;
 
+CREATE OR replace FUNCTION create_restaurant(
+	publisher_id int,
+	jwt varchar(255),
+	new_name varchar(255),
+	new_adress varchar(255),
+	new_contact bytea
+	
+) returns varchar(255) SECURITY definer language plpgsql as $$
+declare
+	is_allowed bool;
+begin
+	select check_user_access(publisher_id, jwt, 'superuser') into is_allowed;
+	if (is_allowed = false)
+	then
+		raise exception 'Not allowed!';
+	end if;
+	
+	insert into restaurants(restaurant_name, adress, contact)
+	values (new_name, new_adress, new_contact);
+	return new_name;
+end;
+$$;
+
+CREATE OR replace FUNCTION delete_crypto(
+	publisher_id int,
+	jwt varchar(255),
+	old_restaurant_name varchar(255)
+	
+) returns void SECURITY DEFINER language plpgsql as $$
+declare
+	is_allowed bool;
+	old_restaurant_id int;
+begin
+	select check_user_access(publisher_id, jwt, 'superuser') into is_allowed;
+	if (is_allowed = false)
+	then
+		
+		raise exception 'Not allowed!';
+	end if;
+
+	select restaurant_id from restaurants where restaurant_name = old_restaurant_name into old_restaurant_id;
+	if (old_restaurant_id is null)
+	then
+		raise exception 'restaurant does not exists!';
+	end if;
+	
+	delete from restaurants where restaurant_id = old_restaurant_id;
+	
+	return;
+end;
+$$;
+
+CREATE OR replace FUNCTION create_product(
+	publisher_id int,
+	jwt varchar(255),
+	new_name varchar(255),
+	new_price int,
+	new_description text,
+	new_restaurant_name varchar(255)
+	
+) returns varchar(255) SECURITY definer language plpgsql as $$
+declare
+	is_allowed bool;
+	new_r_id int;
+begin
+	select check_user_access(publisher_id, jwt, 'superuser') into is_allowed;
+	if (is_allowed = false)
+	then
+		raise exception 'Not allowed!';
+	end if;
+	select restaurant_id from restaurants where restaurant_name = new_restaurant_name
+	into new_r_id;
+	if (new_r_id is null)
+	then
+		raise exception 'Restaurant does not exists!';
+	end if;
+	
+	insert into products(product_name, price, description, restaurant_id)
+	values (new_name, new_adress, new_contact, new_r_id);
+	return new_name;
+end;
+$$;
+
+CREATE OR replace FUNCTION create_order(
+	publisher_id int,
+	jwt varchar(255),
+	new_customer_name varchar(255),
+	new_delivery_guy varchar(255),
+	new_accept_time timestamp,
+	new_state_name varchar(255)
+	
+) returns varchar(255) SECURITY definer language plpgsql as $$
+declare
+	is_allowed bool;
+	new_c_id int;
+	new_s_id int;
+	new_d_id int;
+
+	new_c_role varchar(255);
+	new_d_role varchar(255);
+begin
+	select check_user_access(publisher_id, jwt, 'superuser') into is_allowed;
+	if (is_allowed = false)
+	then
+		raise exception 'Not allowed!';
+	end if;
+	select state_id from order_states where state_name = new_state_name
+	into new_s_id;
+	if (new_s_id is null)
+	then
+		raise exception 'State does not exists!';
+	end if;
+
+	select c.user_id, cr.role_name from users as c join user_role as cr on cr.role_id = c.role_id
+	where c.user_name = new_customer_name
+	into new_c_id, new_c_role;
+	if (new_c_id is null)
+	then
+		raise exception 'User does not exists!';
+	end if;
+	if (new_c_role != 'delivery')
+	then
+		raise exception 'incorrect customer role!';
+	end if;
+
+	select c.user_id, cr.role_name from users as c join user_role as cr on cr.role_id = c.role_id
+	where c.user_name = new_delivery_guy
+	into new_d_id, new_d_role;
+	if (new_d_id is null)
+	then
+		raise exception 'User does not exists!';
+	end if;
+	if (new_c_role != 'delivery')
+	then
+		raise exception 'incorrect delivery role!';
+	end if;
+	
+	insert into orders(customer_id, delivery_guy, accept_time, state_id)
+	values (new_c_id, new_d_id, new_accept_time, new_s_id);
+	return 'created';
+end;
+$$;
+
+
+
 
 
 
