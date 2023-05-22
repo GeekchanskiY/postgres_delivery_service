@@ -60,7 +60,9 @@ create table if not exists orders(
 
 create table if not exists order_product(
 	order_id int not null,
-	product_id int not null
+	product_id int not null,
+	amount int,
+	unique (order_id, product_id)
 ) tablespace TS_ORDER;
 
 
