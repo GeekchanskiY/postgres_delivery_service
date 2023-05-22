@@ -1,0 +1,34 @@
+version: '3.8'
+services:
+  postgres:
+    container_name: postgres
+    image: postgres:14.1-alpine
+    restart: always
+    environment:
+      - POSTGRES_DB=cryptowatcher
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - PGDATA=/var/lib/postgresql/data/
+    ports:
+      - '5432:5432'
+    volumes: 
+      - postgres:/var/lib/postgresql/:Z
+    depends_on:
+      - redis
+  redis:
+    container_name: redis
+    image: redis:6.0
+    command: >
+          --requirepass password
+    ports:
+      - 6379:6379
+    volumes:
+      - redis:/data
+
+volumes:
+  postgres:
+    driver: local
+  redis:
+    driver: local
+
+
