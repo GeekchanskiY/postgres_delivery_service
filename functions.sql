@@ -241,7 +241,7 @@ begin
 end;
 $$;
 
-CREATE OR replace FUNCTION delete_crypto(
+CREATE OR replace FUNCTION delete_restaurant(
 	publisher_id int,
 	jwt varchar(255),
 	old_restaurant_name varchar(255)
@@ -300,6 +300,36 @@ begin
 	return new_name;
 end;
 $$;
+
+CREATE OR replace FUNCTION delete_product(
+	publisher_id int,
+	jwt varchar(255),
+	old_product_name varchar(255)
+	
+) returns void SECURITY DEFINER language plpgsql as $$
+declare
+	is_allowed bool;
+	old_product_id int;
+begin
+	select check_user_access(publisher_id, jwt, 'superuser') into is_allowed;
+	if (is_allowed = false)
+	then
+		
+		raise exception 'Not allowed!';
+	end if;
+
+	select product_id from products where product_name = old_product_name into old_product_id;
+	if (old_product_id is null)
+	then
+		raise exception 'product does not exists!';
+	end if;
+	
+	delete from products where product_id = old_product_id;
+	
+	return;
+end;
+$$;
+
 
 CREATE OR replace FUNCTION create_order(
 	publisher_id int,
@@ -361,8 +391,125 @@ begin
 end;
 $$;
 
+CREATE OR replace FUNCTION delete_order(
+	publisher_id int,
+	jwt varchar(255),
+	old_order_id varchar(255)
+	
+) returns void SECURITY DEFINER language plpgsql as $$
+declare
+	is_allowed bool;
+	zold_order_id int;
+begin
+	select check_user_access(publisher_id, jwt, 'superuser') into is_allowed;
+	if (is_allowed = false)
+	then
+		
+		raise exception 'Not allowed!';
+	end if;
+
+	select order_id from orders where order_id = old_order_id into zold_order_id;
+	if (zold_order_id is null)
+	then
+		raise exception 'order does not exists!';
+	end if;
+	
+	delete from orders where order_id = zold_order_id;
+	
+	return;
+end;
+$$;
 
 
+
+CREATE OR replace FUNCTION add_product_to_order(
+	publisher_id int,
+	jwt varchar(255),
+	new_product varchar(255),
+	
+	new_order_id varchar(255),
+	new_amount int
+	
+) returns varchar(255) SECURITY definer language plpgsql as $$
+declare
+	is_allowed bool;
+	new_p_id int;
+	new_o_id int;
+begin
+	select check_user_access(publisher_id, jwt, 'user') into is_allowed;
+	if (is_allowed = false)
+	then
+		raise exception 'Not allowed!';
+	end if;
+	select product_id from products where product_name = new_product_name
+	into new_p_id;
+	if (new_p_id is null)
+	then
+		raise exception 'product does not exists!';
+	end if;
+	select order_id from orders where order_name = new_order_name
+	into new_o_id;
+	if (new_o_id is null)
+	then
+		raise exception 'order does not exists!';
+	end if;
+	
+	insert into order_product(order_id, product_id, amount)
+	values (new_o_id, new_p_id, new_amount);
+	return 'added';
+end;
+$$;
+
+CREATE OR replace FUNCTION remove_product_to_order(
+	publisher_id int,
+	jwt varchar(255),
+	new_product varchar(255),
+	
+	new_order_id varchar(255)
+	
+) returns varchar(255) SECURITY definer language plpgsql as $$
+declare
+	is_allowed bool;
+	new_p_id int;
+	new_o_id int;
+begin
+	select check_user_access(publisher_id, jwt, 'user') into is_allowed;
+	if (is_allowed = false)
+	then
+		raise exception 'Not allowed!';
+	end if;
+	select product_id from products where product_name = new_product_name
+	into new_p_id;
+	if (new_p_id is null)
+	then
+		raise exception 'product does not exists!';
+	end if;
+	select order_id from orders where order_name = new_order_name
+	into new_o_id;
+	if (new_o_id is null)
+	then
+		raise exception 'order does not exists!';
+	end if;
+	
+	delete from order_product where order_id = new_o_id and product_id = new_p_id;
+	return 'removed';
+end;
+$$;
+
+create or replace function get_my_id(
+	jwt varchar(255)
+) returns INTEGER SECURITY DEFINER language plpgsql as $$
+declare
+	uid INT;
+begin
+	select user_id from auth_tokens where auth_token = jwt into uid;
+	if (uid is null)
+	then
+		raise exception 'Token does not exists!';
+	end if;
+	return uid;
+end;
+$$;
 
 
 
