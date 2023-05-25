@@ -27,14 +27,16 @@ create table if not exists order_states (
 
 create table if not exists restaurants (
 	restaurant_id serial primary key,
-	restaurant_name varchar(255) not null,
+	restaurant_name varchar(255) unique not null,
 	adress varchar(255),
 	contact varchar(255)
 ) tablespace TS_ORDER;
 
+-- ALTER TABLE restaurants ADD CONSTRAINT uniname UNIQUE (restaurant_name);
+
 create table if not exists products (
 	product_id serial primary key,
-	product_name varchar(255) not null,
+	product_name varchar(255) unique not null,
 	price int not null,
 	description text,
 	
@@ -43,6 +45,7 @@ create table if not exists products (
 	constraint FK_RESTAURANT foreign key(restaurant_id) references restaurants(restaurant_id) on delete cascade
 	
 ) tablespace TS_ORDER;
+-- ALTER TABLE products ADD CONSTRAINT uninamep UNIQUE (product_name);
 
 create table if not exists orders(
 	order_id serial primary key,

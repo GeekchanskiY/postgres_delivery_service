@@ -106,10 +106,6 @@ class CustomConnector:
             raise exc.UserDoesNotExistsException(e_text)
         elif e_text == 'Not allowed!':
             raise exc.InvalidPrivelegeExceprion(e_text)
-        elif e_text == 'Crypto does not exists!' or \
-                e_text == 'Token does not exists!' or \
-                e_text == 'News does not exists!':
-            raise exc.DoesNotExistsException(e_text)
         else:
             raise Exception('New_exception: ' + e_text)
 
@@ -233,62 +229,144 @@ class UserMasterConnector(CustomConnector):
 
 
 class OrderConnector(CustomConnector):
-    ''' Crypto master with crypto manage priveleges and methods '''
+    ''' Order master with crypto manage priveleges and methods '''
 
-    rolename = 'crypto_master'
+    rolename = 'order_master'
 
     def __init__(self, user, password):
         super().__init__(user, password)
 
-    def create_crypro(self, user_id, jwt, name, symbol, image_filename, price, volume, market_cap, transactions):
+    def create_order(self, user_id, jwt, customer_name, delivery_guy, accept_time, state_name):
         # read image to bytea
-        with open(f'/home/geek/repos/pg_course_project/app/images/{image_filename}', 'rb') as f:
-            image = f.read().hex()
+        # with open(f'/home/geek/repos/pg_course_project/app/images/{image_filename}', 'rb') as f:
+        #    image = f.read().hex()
         res = self._exec(
-            f"select create_crypto({user_id}, '{jwt}', '{name}', '{symbol}', '{image}', {price}, {volume}, {market_cap}, "
-            f"{transactions})"
+            f"select create_order({user_id}, '{jwt}', '{customer_name}', '{delivery_guy}', '{accept_time}', '{state_name}')"
         )
         return res
 
-    def create_crypto_shot(self, user_id, jwt, name, time, price, cap, volume, transactions):
+    def create_restaurant(self, user_id, jwt, name, adress, contact):
         res = self._exec(
-            f"select create_crypto_shot('{user_id}', '{jwt}', '{name}', '{time}', {price}, {cap}, {volume}, {transactions})"
+            f"select create_restaurant('{user_id}', '{jwt}', '{name}', '{adress}', '{contact}')"
         )
         return res
 
-    def select_cryptos_by_page(self, user_id, jwt, page, per_page):
+    def create_product(self, user_id, jwt, name, price, desc, restaurant_name):
+        res = self._exec(
+            f"select create_product('{user_id}', '{jwt}', '{name}', {price}, '{desc}', '{restaurant_name}')"
+        )
+        return res
+
+    def add_product_to_order(self, user_id, jwt, product, order_id, amount):
+        res = self._exec(
+            f"select add_product_to_order({user_id}, '{jwt}', '{product}', {order_id}, {amount})"
+        )
+        return res
+
+    def get_my_orders(self, user_id, jwt):
+        res = self._exec(
+            f"select get_my_orders('{user_id}', '{jwt}')"
+        )
+        return res
+
+    def get_order_info(self, user_id, jwt, order_id):
+        res = self._exec(
+            f"select get_order_info({user_id}, '{jwt}', {order_id})"
+        )
+        return res
+
+    def get_order_details(self, user_id, jwt, order_id):
         res = self._exec_select(
-            f"select get_all_crypto_by_page({user_id}, '{jwt}', {page}, {per_page})"
+            f"select get_order_details({user_id}, '{jwt}', {order_id})"
         )
-        return res
-
-    def select_crypto_comments(self, user_id, jwt, crypto_name):
-        res = self._exec_select(
-            f"select get_all_crypto_comments({user_id}, '{jwt}', '{crypto_name}')"
-        )
-        return res
-
-    def select_crypto_month_stats(self, user_id, jwt, crypto_name):
-        res = self._exec(
-            f"select get_crypto_month_stats({user_id}, '{jwt}', '{crypto_name}')"
-        )
-        return res
-
-    def delete_crypto(self, user_id, jwt, name):
-        res = self._exec(f"select delete_crypto({user_id}, '{jwt}', '{name}')")
-        return res
-
-    def search_crypto(self, user_id, jwt, pattern):
-        res = self._exec_select(f"select search_crypto({user_id}, '{jwt}', '{pattern}')")
         return res
 
 
 if __name__ == '__main__':
     admin = CustomPostgresConnector('postgres', 'postgres')
-    admin.create_user("Dimka", "DimkaP4S$W0RD", "superuser")
-    print(admin._exec('SELECT * FROM USERS'))
-    admin.login_user("Dimka", "DimkaP4S$W0RD")
-    print(admin._exec('select * FROM auth_tokens'))
-    print(admin._get_my_id())
-    admin.delete_user("Dimka", "DimkaP4S$W0RD")
-    user = UserMasterConnector('user_master', 'DummyP4S$W0RD')
+    # admin.create_user("Vika", "VikaP4S$W0RD", "superuser")
+
+    # Проверка чтобы работали исключения (wrong role)
+    try:
+        admin.create_user("Delivery", "DeliveryP4S$W0RD", 'delivery')
+    except Exception as e:
+        print(str(e))
+
+    # admin.create_user("Delivery", "DeliveryP4S$W0RD", 'delivery_guy')
+
+    # print(admin._exec('SELECT * FROM USERS'))
+    admin.login_user("Vika", "VikaP4S$W0RD")
+    # print(admin._exec('select * FROM auth_tokens'))
+    uid = admin._get_my_id()
+    jwt = admin.jwt.get_jwt()
+
+    print(f"My id is: {uid}")
+    print(f"JWT: {jwt}")
+
+    admin._exec('delete from restaurants')
+    admin._exec('delete from products')
+
+    input("press any key to start creation")
+
+    user_manager = UserMasterConnector('user_master', 'DummyP4S$W0RD')
+    order_manager = OrderConnector('order_master', 'DummyP4S$W0RD')
+
+    delivery_manager = UserMasterConnector('user_master', 'DummyP4S$W0RD')
+    delivery_manager.login_user('Delivery', "DeliveryP4S$W0RD")
+    duid = delivery_manager._get_my_id()
+    djwt = delivery_manager.jwt.get_jwt()
+
+    for i in range(100):
+        order_manager.create_restaurant(uid, jwt, f'Balkon{i}', 'Путейская 68', 'lalala')
+    import random
+    product_ids = []
+    for i in range(10):
+        for z in range(10):
+            new_product_name = f'Product{i}{z}{random.randint(1,100)}'
+            product_ids.append(new_product_name)
+            try:
+                order_manager.create_product(uid, jwt, new_product_name,
+                                             (i * z) + 1, 'product', f'Balkon{i}')
+            except Exception as e:
+                print(str(e))
+    print('1000 lines inserted')
+
+    for i in range(5):
+        try:
+            order_manager.create_order(uid, jwt, 'Vika', 'Delivery', '12-12-12 13:00', ['ready', 'not ready'][random.randint(0, 1)])
+            print('Order created!')
+        except Exception as e:
+            print(str(e))
+    orders = order_manager.get_my_orders(uid, jwt)
+    print(f"My orders: {orders}")
+    my_order_ints = []
+    if orders is not None:
+        for o in orders:
+            my_order_ints.append(int(str(o).split('(')[1].split(',')[0]))
+    for order_id in my_order_ints:
+
+        products = set(random.choices(product_ids, k=10))
+        for p in products:
+
+            order_manager.add_product_to_order(uid, jwt, p, order_id, random.randint(1, 100))
+            print("product added")
+
+        stats = order_manager.get_order_info(uid, jwt, order_id)
+        print("ORDER STATS")
+        print(stats)
+        print("ORDER DETAILS")
+        details = order_manager.get_order_details(uid, jwt, order_id)
+        if details is not None:
+            for d in details:
+                print(d)
+    # order_manager.create_restaurant('')
+
+    # order_manager.login_user("Vika", "VikaP4S$W0RD")
+    # user_manager.login_user("Vika", 'VikaP4S$W0RD')
+
+    # admin.delete_user("Vika", "VikaP4S$W0RD")
+    # user = UserMasterConnector('user_master', 'DummyP4S$W0RD')
+    # input("press any key to delete data...")
+    # admin._exec('delete from restaurants')
+    # admin._exec('delete from products')
+    print('Everything dropped')

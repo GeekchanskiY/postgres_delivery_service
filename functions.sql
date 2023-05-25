@@ -296,7 +296,7 @@ begin
 	end if;
 	
 	insert into products(product_name, price, description, restaurant_id)
-	values (new_name, new_adress, new_contact, new_r_id);
+	values (new_name, new_price, new_description, new_r_id);
 	return new_name;
 end;
 $$;
@@ -330,13 +330,13 @@ begin
 end;
 $$;
 
-
+-- drop function create_order;
 CREATE OR replace FUNCTION create_order(
 	publisher_id int,
 	jwt varchar(255),
 	new_customer_name varchar(255),
 	new_delivery_guy varchar(255),
-	new_accept_time timestamp,
+	new_accept_time varchar(255),
 	new_state_name varchar(255)
 	
 ) returns varchar(255) SECURITY definer language plpgsql as $$
@@ -345,6 +345,8 @@ declare
 	new_c_id int;
 	new_s_id int;
 	new_d_id int;
+
+	atime timestamp;
 
 	new_c_role varchar(255);
 	new_d_role varchar(255);
@@ -368,10 +370,10 @@ begin
 	then
 		raise exception 'User does not exists!';
 	end if;
-	if (new_c_role != 'delivery')
-	then
-		raise exception 'incorrect customer role!';
-	end if;
+	--if (new_c_role != 'delivery')
+	--then
+	--	raise exception 'incorrect customer role!';
+	--end if;
 
 	select c.user_id, cr.role_name from users as c join user_role as cr on cr.role_id = c.role_id
 	where c.user_name = new_delivery_guy
@@ -386,10 +388,15 @@ begin
 	end if;
 	
 	insert into orders(customer_id, delivery_guy, accept_time, state_id)
-	values (new_c_id, new_d_id, new_accept_time, new_s_id);
+	values (new_c_id, new_d_id, new_accept_time::timestamp, new_s_id);
 	return 'created';
 end;
 $$;
+
+--insert into order_states(state_name) values ('ready'), ('not ready');
+--select * from order_states;
+--delete from order_states;
+-- select create_order(6, 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VybmFtZSI6IlZpa2EiLCJleHBpcmVzX2luIjoiMjAyMy0wNS0yNCAxNjo0NDoyMyJ9.4fRu1CTXeRmiBjv4SrkkWlJFpeFZiiQhNVlrdkeVhEM', 'Vika', 'Delivery', '2022-09-21 13:50', 'not ready');
 
 CREATE OR replace FUNCTION delete_order(
 	publisher_id int,
@@ -421,13 +428,12 @@ end;
 $$;
 
 
-
 CREATE OR replace FUNCTION add_product_to_order(
 	publisher_id int,
 	jwt varchar(255),
 	new_product varchar(255),
 	
-	new_order_id varchar(255),
+	new_order_id int,
 	new_amount int
 	
 ) returns varchar(255) SECURITY definer language plpgsql as $$
@@ -441,13 +447,13 @@ begin
 	then
 		raise exception 'Not allowed!';
 	end if;
-	select product_id from products where product_name = new_product_name
+	select product_id from products where product_name = new_product
 	into new_p_id;
 	if (new_p_id is null)
 	then
 		raise exception 'product does not exists!';
 	end if;
-	select order_id from orders where order_name = new_order_name
+	select o.order_id from orders as o where o.order_id = new_order_id
 	into new_o_id;
 	if (new_o_id is null)
 	then

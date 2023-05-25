@@ -4,3 +4,5 @@ FROM orders o
 JOIN order_product op ON o.order_id = op.order_id
 JOIN products p ON op.product_id = p.product_id
 JOIN restaurants r ON p.restaurant_id = r.restaurant_id;
+
+-- select * from order_details;

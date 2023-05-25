@@ -74,7 +74,7 @@ begin
 end; 
 $$;
 
-
+-- delete from restaurants;
 
 
 
