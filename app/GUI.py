@@ -5,6 +5,7 @@ from tkinter import messagebox
 #  CLASSES
 #
 
+
 class Product:
     def __init__(self, name, price, description):
         self.name = name
@@ -14,20 +15,22 @@ class Product:
     def __str__(self):
         return f"Название: {self.name}, Цена: {self.price}, Описание: {self.description}"
 
+
 class Restaurant:
     def __init__(self, name, adress, contact):
         self.name = name
         self.adress = adress
         self.contact = contact
-    
+
     def __str__(self):
         return f"Название: {self.name} Адрес: {self.adress} Контакт: {self.contact}"
+
 
 class User:
     def __init__(self, name, role):
         self.name = name
         self.role = role
-    
+
     def __str__(self) -> str:
         return f"Имя: {self.name} Роль: {self.role}"
 
@@ -45,10 +48,11 @@ class Order:
 
 class App(tk.Frame):
     user: User | None = None
-    def __init__(self, master=None):
+    def __init__(self, master=None, user_master=None):
         super().__init__(master)
         self.master = master
         self.master.title("ВкусноКушать")
+        self.user_master = user_master
 
         self.create_widgets()
 
@@ -70,10 +74,13 @@ class App(tk.Frame):
         username = self.entry_username.get()
         password = self.entry_password.get()
 
-        if username == "admin" and password == "password":
+        try:
+            self.user_master.login_user(username, password)
             messagebox.showinfo("Успешный вход", "Добро пожаловать, " + username + "!")
             self.open_product_window()
-        else:
+
+        except Exception as e:
+            print(str(e))
             messagebox.showerror("Ошибка входа", "Неверное имя пользователя или пароль.")
 
     def open_product_window(self):
@@ -88,7 +95,6 @@ class App(tk.Frame):
         listbox_products = tk.Listbox(product_window)
         listbox_products.pack()
 
-        products = ["Товар 1", "Товар 2", "Товар 3"]
         for product in products:
             listbox_products.insert(tk.END, product)
 

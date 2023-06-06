@@ -54,6 +54,6 @@ END;
 $$ LANGUAGE PLPGSQL;
 
 
-select export_database('/var/lib/postgresql/data/database.xml');
-select import_xml('/var/lib/postgresql/data/database.xml');
+select export_database('/var/lib/postgresql/data/database2.xml');
+select import_xml('/var/lib/postgresql/data/database2.xml');
 

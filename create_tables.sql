@@ -65,7 +65,7 @@ create table if not exists category (
 create table if not exists orders(
 	order_id serial primary key,
 	customer_id int not null,
-	delivery_guy int not null,
+	delivery_guy int null,
 	accept_time timestamp not null,
 	state_id int not null,
 	
@@ -75,6 +75,8 @@ create table if not exists orders(
 	
 	
 ) tablespace TS_ORDER;
+
+-- alter table orders alter column delivery_guy drop not null;
 
 create table if not exists order_product(
 	order_id int not null,

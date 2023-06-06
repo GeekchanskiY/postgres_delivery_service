@@ -270,7 +270,7 @@ begin
 end;
 $$;
 
-drop function create_product(int4, varchar, varchar, int4, text, varchar, varchar);
+-- drop function create_product(int4, varchar, varchar, int4, text, varchar, varchar);
 
 CREATE OR replace FUNCTION create_product(
 	publisher_id int,
@@ -340,15 +340,12 @@ begin
 end;
 $$;
 
-
--- drop function create_order;
+--drop function create_order;
 CREATE OR replace FUNCTION create_order(
 	publisher_id int,
 	jwt varchar(255),
 	new_customer_name varchar(255),
-	new_delivery_guy varchar(255),
-	new_accept_time varchar(255),
-	new_state_name varchar(255)
+	new_accept_time varchar(255)
 	
 ) returns varchar(255) SECURITY definer language plpgsql as $$
 declare
@@ -367,7 +364,7 @@ begin
 	then
 		raise exception 'Not allowed!';
 	end if;
-	select state_id from order_states where state_name = new_state_name
+	select state_id from order_states where state_name = 'basket'
 	into new_s_id;
 	if (new_s_id is null)
 	then
@@ -386,20 +383,10 @@ begin
 	--	raise exception 'incorrect customer role!';
 	--end if;
 
-	select c.user_id, cr.role_name from users as c join user_role as cr on cr.role_id = c.role_id
-	where c.user_name = new_delivery_guy
-	into new_d_id, new_d_role;
-	if (new_d_id is null)
-	then
-		raise exception 'User does not exists!';
-	end if;
-	if (new_c_role != 'delivery')
-	then
-		raise exception 'incorrect delivery role!';
-	end if;
 	
-	insert into orders(customer_id, delivery_guy, accept_time, state_id)
-	values (new_c_id, new_d_id, new_accept_time::timestamp, new_s_id);
+	
+	insert into orders(customer_id, accept_time, state_id)
+	values (new_c_id, new_accept_time::timestamp, new_s_id);
 	return 'created';
 end;
 $$;

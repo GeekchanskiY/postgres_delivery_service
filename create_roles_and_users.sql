@@ -3,6 +3,8 @@ insert into user_role(role_name) values
 
 -- delete from user_role;
 
+select * from order_states;
+
 create role order_manager LOGIN;
 create role user_manager LOGIN;
 

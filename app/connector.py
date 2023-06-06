@@ -13,6 +13,7 @@ from redis_connector import RedisConnector
 
 from exceptions import CustomExceptions as exc
 
+from GUI import App
 
 class CustomConnector:
     ''' Base Connector class with all priveleges. Use only for tests! '''
@@ -236,12 +237,12 @@ class OrderConnector(CustomConnector):
     def __init__(self, user, password):
         super().__init__(user, password)
 
-    def create_order(self, user_id, jwt, customer_name, delivery_guy, accept_time, state_name):
+    def create_order(self, user_id, jwt, customer_name, accept_time, state_name):
         # read image to bytea
         # with open(f'/home/geek/repos/pg_course_project/app/images/{image_filename}', 'rb') as f:
         #    image = f.read().hex()
         res = self._exec(
-            f"select create_order({user_id}, '{jwt}', '{customer_name}', '{delivery_guy}', '{accept_time}', '{state_name}')"
+            f"select create_order({user_id}, '{jwt}', '{customer_name}', '{accept_time}')"
         )
         return res
 
@@ -251,9 +252,9 @@ class OrderConnector(CustomConnector):
         )
         return res
 
-    def create_product(self, user_id, jwt, name, price, desc, restaurant_name):
+    def create_product(self, user_id, jwt, name, price, desc, restaurant_name, category):
         res = self._exec(
-            f"select create_product('{user_id}', '{jwt}', '{name}', {price}, '{desc}', '{restaurant_name}')"
+            f"select create_product('{user_id}', '{jwt}', '{name}', {price}, '{desc}', '{restaurant_name}', '{category}')"
         )
         return res
 
@@ -287,6 +288,17 @@ class OrderConnector(CustomConnector):
             f"select get_order_details({user_id}, '{jwt}', {order_id})"
         )
         return res
+
+
+def app_workflow():
+    import tkinter as tk
+
+    admin = CustomPostgresConnector('postgres', 'postgres')
+    root = tk.Tk()
+    app = App(master=root, user_master=admin)
+    app.mainloop()
+
+
 
 
 if __name__ == '__main__':
@@ -324,17 +336,17 @@ if __name__ == '__main__':
     duid = delivery_manager._get_my_id()
     djwt = delivery_manager.jwt.get_jwt()
 
-    for i in range(100):
+    for i in range(10):
         order_manager.create_restaurant(uid, jwt, f'Balkon{i}', 'Путейская 68', 'lalala')
     import random
     product_ids = []
-    for i in range(100):
-        for z in range(100):
+    for i in range(10):
+        for z in range(10):
             new_product_name = f'Product{i}{z}{random.randint(1,100)}'
             product_ids.append(new_product_name)
             try:
                 order_manager.create_product(uid, jwt, new_product_name,
-                                             (i * z) + 1, 'product', f'Balkon{i}')
+                                             (i * z) + 1, 'product', f'Balkon{i}', 'FastFood')
             except Exception as e:
                 print(str(e))
     print('1000 lines inserted')
@@ -380,6 +392,7 @@ if __name__ == '__main__':
         print('8 - Добавить доставщика')
         print('9 - Найти продукты')
         print('10 - Цена заказа')
+        print('11 - приложение')
         # print('11 - Статистика')
         print('0: выйти из программы')
         x = input('-->')
@@ -399,15 +412,16 @@ if __name__ == '__main__':
             a = input('Введите название продукта \n -->')
             d = input('Введите описание продукта \n -->')
             p = input('Введите цену продукта \n -->')
+            h = input('Введите категорию продукта \n -->')
             try:
-                order_manager.create_product(uid, jwt, a, p, d, b)
+                order_manager.create_product(uid, jwt, a, p, d, b, h)
             except Exception as e:
                 print(str(e))
         elif x == 3:
-            d = input('Введите имя доставщика \n -->')
+            # d = input('Введите имя доставщика \n -->')
             p = input('Введите желаемое время выдачи заказа прим. 2012-12-12 13:00 \n -->')
             try:
-                order_manager.create_order(uid, jwt, 'Vika', d, p, 'not ready')
+                order_manager.create_order(uid, jwt, 'Vika', p, 'basket')
             except Exception as e:
                 print(e)
 
@@ -479,6 +493,8 @@ if __name__ == '__main__':
                 print(order_manager._exec(f"select calculate_order_stats({uid}, '{jwt}', {q})"))
             except Exception as e:
                 print(str(e))
+        elif x == 11:
+            app_workflow()
         else:
             break
 
