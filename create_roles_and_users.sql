@@ -11,8 +11,20 @@ grant execute on function create_user to user_manager;
 grant execute on function create_standard_user to user_manager;
 grant execute on function login_user to user_manager;
 grant execute on function get_my_id to user_manager;
+grant execute on function update_user_password to user_manager;
+grant execute on function update_user_name to user_manager;
 
-
+grant execute on function remove_product_to_order to order_manager;
+grant execute on function add_product_to_order to order_manager;
+grant execute on function delete_order to order_manager;
+grant execute on function create_order to order_manager;
+grant execute on function delete_product to order_manager;
+grant execute on function create_product to order_manager;
+grant execute on function create_restaurant to order_manager;
+grant execute on function delete_restaurant to order_manager;
+grant execute on function search_product to order_manager;
+grant execute on function calculate_order_stats to order_manager;
+-- grant update on auth_tokens to user_manager; 
 -- grant execute on function create_standard_user to order_manager;
 
 

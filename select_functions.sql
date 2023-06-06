@@ -45,7 +45,7 @@ begin
 	then
 		raise exception 'Not allowed!';
 	end if;
-	return query select * from orders where order_id = norder_id;
+	return query select * from orders as o where o.order_id = norder_id;
 end; 
 $$;
 
@@ -70,13 +70,121 @@ begin
 	then
 		raise exception 'Not allowed!';
 	end if;
-	return query select * from products where product_name like search_pattern limit 10;
+	return query select * from products as p where p.product_name like search_pattern limit 10;
 end; 
 $$;
 
+create or replace function get_my_orders(
+	publisher_id int,
+	jwt varchar(255)
+) returns table (order_id int)  SECURITY definer language plpgsql
+as $$
+declare 
+	is_allowed bool;
+begin
+	select check_user_access(publisher_id, jwt, 'user') into is_allowed;
+	if (is_allowed = false)
+	then
+		raise exception 'Not allowed!';
+	end if;
+	return query select o.order_id from orders as o where o.customer_id = publisher_id;
+end;
+$$;
 -- delete from restaurants;
 
+create or replace function get_order_details(
+	publisher_id int,
+	jwt varchar(255),
+	norder_id int
+) returns table (
+	order_id_i int,
+	o_product_name varchar(255),
+	o_product_amount int,
+	o_product_restaurant_name varchar(255),
+	o_customer_id int,
+	o_delivery_guy int
+) SECURITY definer language plpgsql
+as $$
+declare 
+	is_allowed bool;
+begin
+	select check_user_access(publisher_id, jwt, 'user') into is_allowed;
+	if (is_allowed = false)
+	then
+		raise exception 'Not allowed!';
+	end if;
+	return query select * from order_details as o where o.order_id = norder_id;
+end;
+$$;
 
+
+CREATE OR REPLACE FUNCTION count_users()
+RETURNS INT AS $$
+DECLARE
+    user_count INT;
+BEGIN
+    SELECT COUNT(*) INTO user_count FROM users;
+    RETURN user_count;
+END;
+$$ LANGUAGE plpgsql;
+
+--select  count_users();
+
+CREATE OR REPLACE FUNCTION calculate_total_cost()
+RETURNS NUMERIC AS $$
+DECLARE
+    total_cost NUMERIC := 0;
+    
+BEGIN
+    select  SUM(p.price * op.amount) into total_cost
+    from orders as o
+    inner join order_product as op on o.order_id = op.order_id
+	inner join products as p on p.product_id = op.product_id;
+   
+    RETURN total_cost;
+END;
+$$ LANGUAGE plpgsql;
+
+
+--select calculate_total_cost();
+
+CREATE OR REPLACE FUNCTION get_order_count()
+RETURNS INTEGER AS $$
+DECLARE
+    order_count INTEGER;
+BEGIN
+    SELECT COUNT(*) INTO order_count
+    FROM orders;
+   
+    RETURN order_count;
+END;
+$$ LANGUAGE plpgsql;
+
+--select get_order_count();
+
+create or replace function calculate_order_stats(
+	uid int,
+	jwt varchar(255),
+	norder_id int
+) returns varchar(255) security definer language plpgsql as $$
+declare 
+	is_allowed bool;
+	order_summary_price int;
+begin
+	select check_user_access(uid, jwt, 'user') into is_allowed;
+	if (is_allowed = false)
+	then
+		raise exception 'Not allowed!';
+	end if;
+	select sum(p.price * op.amount) from orders as o
+	inner join order_product as op on o.order_id = op.order_id
+	inner join products as p on p.product_id = op.product_id
+	where o.order_id = norder_id into order_summary_price;
+	return 'Summary price:' || order_summary_price::varchar;
+end;
+$$;
+---select * from users;
+---select calculate_order_stats(6,'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VybmFtZSI6IlZpa2EiLCJleHBpcmVzX2luIjoiMjAyMy0wNS0zMCAxMzo0Mzo0MyJ9.nbSB2NII0Ry-g_rwIpUZsd_NnBYFPOgaX2aTDfVU6lU',250);
 
 
 

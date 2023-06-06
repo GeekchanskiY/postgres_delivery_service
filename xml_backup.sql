@@ -9,7 +9,7 @@ BEGIN
 
   XML_DATA := '<?xml version="1.0" encoding="UTF-8"?>' || XML_DATA::TEXT;
 
-  PERFORM pg_catalog.PG_FILE_WRITE(FILE_PATH::TEXT, XML_DATA::TEXT);
+  PERFORM pg_catalog.PG_FILE_WRITE(FILE_PATH::TEXT, XML_DATA::text, false); -- (false в конце чтобы типо не дополнять, а перезаписывать)
 END;
 $$
 LANGUAGE PLPGSQL;
@@ -30,7 +30,7 @@ BEGIN
     user_name varchar(255),
 	user_password varchar(255),
 	salt varchar(255),
-	role_id INT
+	role_id serial
     );
     
     XML_DATA := XMLPARSE(DOCUMENT CONVERT_FROM(PG_READ_BINARY_FILE(FILE_PATH), 'UTF8'));
@@ -41,12 +41,11 @@ BEGIN
 	    salt varchar(255) path 'salt',
 	    role INT path 'role_id'
     ) LOOP
-        INSERT INTO TEMP_USERS ( user_name, user_password, salt, role_id)
+        INSERT INTO TEMP_USERS ( user_name, user_password, salt)
         VALUES (
             USER_DATA.user_name,
             USER_DATA.user_password,
-            USER_DATA.salt,
-            USER_DATA.role_id
+            USER_DATA.salt
         );
     END LOOP;
 
@@ -55,4 +54,6 @@ END;
 $$ LANGUAGE PLPGSQL;
 
 
--- select export_database('/var/lib/postgresql/data/database.xml');
+select export_database('/var/lib/postgresql/data/database.xml');
+select import_xml('/var/lib/postgresql/data/database.xml');
+

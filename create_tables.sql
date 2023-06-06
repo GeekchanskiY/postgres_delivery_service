@@ -8,9 +8,14 @@ create table if not exists USERS (
 	user_name varchar(255) not null unique,
 	user_password varchar(255) not null,
 	salt varchar(255) not null,
+	region varchar(255) not null default 'Minsk';
 	role_id INT,
 	constraint FK_ROLE foreign key(role_id) references USER_ROLE(role_id) on delete cascade
 ) tablespace TS_USER;
+
+alter table users add region varchar(255) not null default 'Minsk';
+
+select * from users;
 
 create table if not exists AUTH_TOKENS (
 	user_id INT unique not null,
@@ -42,10 +47,20 @@ create table if not exists products (
 	
 	restaurant_id int not null,
 	
+	category_id int not null,
+	
+	constraint FK_CATEGORY foreign key(category_id) references category(category_id) on delete cascade,
 	constraint FK_RESTAURANT foreign key(restaurant_id) references restaurants(restaurant_id) on delete cascade
 	
 ) tablespace TS_ORDER;
 -- ALTER TABLE products ADD CONSTRAINT uninamep UNIQUE (product_name);
+
+
+create table if not exists category (
+	category_id serial primary key,
+	category_name varchar(255)
+) tablespace TS_ORDER;
+
 
 create table if not exists orders(
 	order_id serial primary key,

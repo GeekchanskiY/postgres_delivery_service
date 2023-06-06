@@ -270,18 +270,21 @@ begin
 end;
 $$;
 
+drop function create_product(int4, varchar, varchar, int4, text, varchar, varchar);
+
 CREATE OR replace FUNCTION create_product(
 	publisher_id int,
 	jwt varchar(255),
 	new_name varchar(255),
 	new_price int,
 	new_description text,
-	new_restaurant_name varchar(255)
-	
+	new_restaurant_name varchar(255),
+	new_category varchar(255)
 ) returns varchar(255) SECURITY definer language plpgsql as $$
 declare
 	is_allowed bool;
 	new_r_id int;
+	new_cat_id int;
 begin
 	select check_user_access(publisher_id, jwt, 'superuser') into is_allowed;
 	if (is_allowed = false)
@@ -294,9 +297,16 @@ begin
 	then
 		raise exception 'Restaurant does not exists!';
 	end if;
+
+	select category_id from category where category_name = new_category into new_cat_id;
+	if (new_cat_id is null)
+	then
+		insert into category(category_name) values (new_category);
+	end if;
+	select category_id from category where category_name = new_category into new_cat_id;
 	
-	insert into products(product_name, price, description, restaurant_id)
-	values (new_name, new_price, new_description, new_r_id);
+	insert into products(product_name, price, description, restaurant_id, category_id)
+	values (new_name, new_price, new_description, new_r_id, new_cat_id);
 	return new_name;
 end;
 $$;
@@ -329,6 +339,7 @@ begin
 	return;
 end;
 $$;
+
 
 -- drop function create_order;
 CREATE OR replace FUNCTION create_order(
@@ -517,5 +528,62 @@ begin
 end;
 $$;
 
+--drop function update_user_name(int4, varchar);
+CREATE OR REPLACE FUNCTION update_user_name(nuser_id INT, jwt varchar(255), nnew_name VARCHAR)
+RETURNS VOID AS $$
+declare 
+	res varchar(255);
+	is_allowed bool;
+	
+begin
+	-- Check if user does not exists
+	select user_name from users where user_name = new_user_name into res;
+	if (res is  null) 
+	then 
+		raise exception 'User dont exists!';
+	end if;
+
+select check_user_access(nuser_id, jwt, 'user') into is_allowed;
+	if (is_allowed = false)
+	then
+		raise exception 'Not allowed!';
+	end if;
+
+    UPDATE users
+    SET user_name = nnew_name
+    WHERE user_id = nuser_id;
+END;
+$$ LANGUAGE plpgsql;
+
+
+---SELECT update_user_name(8, 'Dkfl,');
+select * from users;
+
+CREATE OR REPLACE FUNCTION update_user_password(nuser_id INT, jwt varchar(255), nuser_password VARCHAR)
+RETURNS VOID AS $$
+declare 
+	u_salt varchar(255);
+	res varchar(255);
+	new_hashed_password varchar(255);
+begin
+	-- Check if user does not exists
+	select user_name from users where user_name = new_user_name into res;
+	if (res is null) 
+	then 
+		raise exception 'User dont exists!';
+	end if;
+
+select check_user_access(nuser_id, jwt, 'user') into is_allowed;
+	if (is_allowed = false)
+	then
+		raise exception 'Not allowed!';
+	end if;
+	select salt from users where user_id = nuser_id into u_salt;
+	select crypt(nuser_password, salt) into new_hashed_password;
+    UPDATE users
+    SET user_password = new_hashed_password
+    WHERE user_id = nuser_id;
+END;
+$$ LANGUAGE plpgsql;
 
 

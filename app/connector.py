@@ -257,6 +257,13 @@ class OrderConnector(CustomConnector):
         )
         return res
 
+    def create_category(self, user_id, jwt, name):
+        res = self._exec(
+            f"select create_category({user_id}, '{jwt}', '{name}')"
+
+        )
+        return res
+
     def add_product_to_order(self, user_id, jwt, product, order_id, amount):
         res = self._exec(
             f"select add_product_to_order({user_id}, '{jwt}', '{product}', {order_id}, {amount})"
@@ -288,7 +295,7 @@ if __name__ == '__main__':
 
     # Проверка чтобы работали исключения (wrong role)
     try:
-        admin.create_user("Delivery", "DeliveryP4S$W0RD", 'delivery')
+        admin.create_user("Delivery", "DeliveryP4S$W0RD", 'delivery_guy')
     except Exception as e:
         print(str(e))
 
@@ -305,6 +312,7 @@ if __name__ == '__main__':
 
     admin._exec('delete from restaurants')
     admin._exec('delete from products')
+    admin._exec('delete from orders')
 
     input("press any key to start creation")
 
@@ -320,8 +328,8 @@ if __name__ == '__main__':
         order_manager.create_restaurant(uid, jwt, f'Balkon{i}', 'Путейская 68', 'lalala')
     import random
     product_ids = []
-    for i in range(10):
-        for z in range(10):
+    for i in range(100):
+        for z in range(100):
             new_product_name = f'Product{i}{z}{random.randint(1,100)}'
             product_ids.append(new_product_name)
             try:
@@ -333,7 +341,7 @@ if __name__ == '__main__':
 
     for i in range(5):
         try:
-            order_manager.create_order(uid, jwt, 'Vika', 'Delivery', '12-12-12 13:00', ['ready', 'not ready'][random.randint(0, 1)])
+            order_manager.create_order(uid, jwt, 'Vika', 'Delivery', '12-12-12 13:00', 'not ready')
             print('Order created!')
         except Exception as e:
             print(str(e))
@@ -359,6 +367,122 @@ if __name__ == '__main__':
         if details is not None:
             for d in details:
                 print(d)
+
+    while True:
+        print('Выбор действия:')
+        print('1 - Создать ресторан')
+        print('2 - Создать продукт')
+        print('3 - Создать заказ')
+        print('4 - Добавить продукт в заказ')
+        print('5 - Убрать продукт из заказа')
+        print('6 - просмотреть мои заказы')
+        print('7 - изменить статус заказа')
+        print('8 - Добавить доставщика')
+        print('9 - Найти продукты')
+        print('10 - Цена заказа')
+        # print('11 - Статистика')
+        print('0: выйти из программы')
+        x = input('-->')
+        x = int(x)
+
+        if x == 1:
+            b = input('Введите название ресторана \n -->')
+            a = input('Введите адрес ресторана \n --> ')
+            c = input('Введите контакты ресторана \n -->')
+            try:
+                order_manager.create_restaurant(uid, jwt, b, a, c)
+                print('Ресторан добавлен')
+            except Exception as e:
+                print(str(e))
+        elif x == 2:
+            b = input('Введите название ресторана \n -->')
+            a = input('Введите название продукта \n -->')
+            d = input('Введите описание продукта \n -->')
+            p = input('Введите цену продукта \n -->')
+            try:
+                order_manager.create_product(uid, jwt, a, p, d, b)
+            except Exception as e:
+                print(str(e))
+        elif x == 3:
+            d = input('Введите имя доставщика \n -->')
+            p = input('Введите желаемое время выдачи заказа прим. 2012-12-12 13:00 \n -->')
+            try:
+                order_manager.create_order(uid, jwt, 'Vika', d, p, 'not ready')
+            except Exception as e:
+                print(e)
+
+        elif x == 4:
+            p = input('Введите название продукта \n -->')
+            a = input('Введите коллиичество товара \n -->')
+            u = input('Введите id заказа \n -->')
+            try:
+                admin._exec(
+                    f"select add_product_to_order({uid}, '{jwt}', '{p}', {u}, {a})"
+                )
+                print('Товар добавлен')
+            except Exception as e:
+                print(e)
+        elif x == 5:
+            p = input('Введите название продукта \n -->')
+            u = input('Введите id заказа \n -->')
+            try:
+                admin._exec(
+                    f"select remove_product_to_order({uid}, '{jwt}', '{p}', {u})"
+                )
+                print('Товар удалён')
+            except Exception as e:
+                print(e)
+
+        elif x == 6:
+            try:
+                orders = order_manager.get_my_orders(uid, jwt)
+                print(f"My orders: {orders}")
+                my_order_ints = []
+                if orders is not None:
+                    for o in orders:
+                        my_order_ints.append(int(str(o).split('(')[1].split(',')[0]))
+                for order_id in my_order_ints:
+                    stats = order_manager.get_order_info(uid, jwt, order_id)
+                    print("ORDER STATS")
+                    print(stats)
+                    print("ORDER DETAILS")
+                    details = order_manager.get_order_details(uid, jwt, order_id)
+                    if details is not None:
+                        for d in details:
+                            print(d)
+            except Exception as e:
+                print(str(e))
+            print('Первая цифра - id')
+        elif x == 7:
+            asd = input('Введите id заказа \n -->')
+            try:
+                admin._exec(f'UPDATE ORDERS SET state_id = 5 where order_id = {asd}')
+                admin._exec('Commit')
+            except Exception as e:
+                print(str(e))
+        elif x == 8:
+            u = input('Введите имя доставщика: \n -->')
+            try:
+                admin.create_user(u, "DeliveryP4S$W0RD", 'delivery_guy')
+            except Exception as e:
+                print(str(e))
+        elif x == 9:
+            q = input('Введите поисковый запрос \n -->')
+
+            try:
+                print(order_manager._exec_select(f"select search_product({uid}, '{jwt}', '{q}')"))
+            except Exception as e:
+                print(str(e))
+        elif x == 10:
+            q = input('Введите id заказа \n -->')
+            try:
+                print(order_manager._exec(f"select calculate_order_stats({uid}, '{jwt}', {q})"))
+            except Exception as e:
+                print(str(e))
+        else:
+            break
+
+
     # order_manager.create_restaurant('')
 
     # order_manager.login_user("Vika", "VikaP4S$W0RD")

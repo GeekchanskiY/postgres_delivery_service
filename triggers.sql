@@ -30,3 +30,45 @@ execute function raise_when_too_many_orders();
     END IF;
 END;
 $$;
+
+
+
+
+CREATE OR REPLACE FUNCTION check_order_status()
+RETURNS TRIGGER AS $$
+declare 
+nstate_id int;
+rstate_id int;
+BEGIN
+     select state_id from orders WHERE orders.order_id = NEW.order_id into nstate_id;
+     select state_id from order_states where state_name = 'ready' into rstate_id;
+     if( nstate_id = rstate_id )
+     THEN
+        RAISE EXCEPTION 'Невозможно добавить продукт в заказ со статусом "ready"';
+    END IF;
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+DO
+$$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1
+        FROM pg_trigger
+        WHERE tgname = 'check_order_status'
+    ) THEN
+        create trigger check_order_status
+before insert on order_product for each row
+execute function check_order_status();
+    END IF;
+END;
+$$;
+
+-- drop trigger check_order_status on orders;
+
+--select * from orders;
+--select * from order_states;
+--select * from products;
+insert into order_product(order_id, product_id, amount) values (226, 264818, 30);
+
