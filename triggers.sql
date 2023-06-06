@@ -41,10 +41,10 @@ nstate_id int;
 rstate_id int;
 BEGIN
      select state_id from orders WHERE orders.order_id = NEW.order_id into nstate_id;
-     select state_id from order_states where state_name = 'ready' into rstate_id;
+     select state_id from order_states where state_name = 'done' into rstate_id;
      if( nstate_id = rstate_id )
      THEN
-        RAISE EXCEPTION 'Невозможно добавить продукт в заказ со статусом "ready"';
+        RAISE EXCEPTION 'Невозможно добавить продукт в заказ со статусом "done"';
     END IF;
     RETURN NEW;
 END;

@@ -1,6 +1,10 @@
 insert into user_role(role_name) values
 ('superuser'), ('user'), ('delivery_guy');
 
+insert into order_states(state_name) values
+('basket'), ('in progress'), ('done');
+delete from order_states ;
+
 -- delete from user_role;
 
 select * from order_states;

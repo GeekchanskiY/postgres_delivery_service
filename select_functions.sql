@@ -183,6 +183,31 @@ begin
 	return 'Summary price:' || order_summary_price::varchar;
 end;
 $$;
+
+create or replace function select_available_orders(
+	uid int,
+	jwt varchar(255)
+) returns table (zorder_adress varchar(255), zcustomer_name varchar(255), zorder_id int)
+ security definer language plpgsql as $$
+declare 
+	is_allowed bool;
+	order_available int;
+begin
+	select check_user_access(uid, jwt, 'delivery_guy') into is_allowed;
+	if (is_allowed = false)
+	then
+		raise exception 'Not allowed!';
+	end if;
+	select state_id from order_states where state_name = 'in progress' into order_available;
+	return query select cc.region, cc.user_name, o.order_id from orders as o
+	inner join users as cc on cc.user_id = o.customer_id
+	where o.state_id = order_available;
+end;
+$$;
+
+--select state_id from order_states where state_name = 'in progress';
+
+
 ---select * from users;
 ---select calculate_order_stats(6,'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VybmFtZSI6IlZpa2EiLCJleHBpcmVzX2luIjoiMjAyMy0wNS0zMCAxMzo0Mzo0MyJ9.nbSB2NII0Ry-g_rwIpUZsd_NnBYFPOgaX2aTDfVU6lU',250);
 
