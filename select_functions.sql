@@ -49,6 +49,7 @@ begin
 end; 
 $$;
 
+-- drop function search_product(int4, varchar, varchar) ;
 create or replace function search_product(
 	publisher_id int,
 	jwt varchar(255),
@@ -58,7 +59,7 @@ create or replace function search_product(
 	product_name varchar(255),
 	price int,
 	description text,
-	
+	category_id int,
 	restaurant_id int) SECURITY definer language plpgsql
 as $$
 declare 
@@ -205,9 +206,33 @@ begin
 end;
 $$;
 
---select state_id from order_states where state_name = 'in progress';
+create or replace function confirm_order(
+	uid int,
+	jwt varchar(255),
+	zorder_id int
+) returns varchar(255) security definer language plpgsql as $$
+declare 
+	is_allowed bool;
+	order_available int;
+begin
+	select check_user_access(uid, jwt, 'user') into is_allowed;
+	if (is_allowed = false)
+	then
+		raise exception 'Not allowed!';
+	end if;
+	if (uid != (select customer_id from orders where order_id = zorder_id))
+	then 
+		raise exception 'Not your order!';
+	end if;
+	select state_id from order_states where state_name = 'in progress' into order_available;
+	update orders set state_id = order_available where order_id = zorder_id;
+	return 'Success!';
+end;
+$$;
 
+-- select state_id from order_states where state_name = 'in progress';
 
+select * from products;
 ---select * from users;
 ---select calculate_order_stats(6,'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VybmFtZSI6IlZpa2EiLCJleHBpcmVzX2luIjoiMjAyMy0wNS0zMCAxMzo0Mzo0MyJ9.nbSB2NII0Ry-g_rwIpUZsd_NnBYFPOgaX2aTDfVU6lU',250);
 

@@ -289,6 +289,18 @@ class OrderConnector(CustomConnector):
         )
         return res
 
+    def get_available_orders(self, user_id, jwt):
+        res = self._exec_select(
+            f"select select_available_orders({user_id}, '{jwt}')"
+        )
+        return res
+
+    def confirm_order(self, user_id, jwt, order_id):
+        res = self._exec(
+            f"select confirm_order({user_id}, '{jwt}', {order_id})"
+        )
+        return res
+
 
 def app_workflow():
     import tkinter as tk
@@ -299,6 +311,16 @@ def app_workflow():
     app.mainloop()
 
 
+def delivery_guy():
+    order_manager = OrderConnector('order_master', 'DummyP4S$W0RD')
+
+    delivery_manager = UserMasterConnector('user_master', 'DummyP4S$W0RD')
+    delivery_manager.login_user('Delivery', "DeliveryP4S$W0RD")
+
+    dev_uid = delivery_manager._get_my_id()
+    dev_jwt = delivery_manager.jwt.get_jwt()
+
+    print(order_manager.get_available_orders(dev_uid, dev_jwt))
 
 
 if __name__ == '__main__':
@@ -353,7 +375,7 @@ if __name__ == '__main__':
 
     for i in range(5):
         try:
-            order_manager.create_order(uid, jwt, 'Vika', 'Delivery', '12-12-12 13:00', 'not ready')
+            order_manager.create_order(uid, jwt, 'Vika', 'Delivery', '12-12-12 13:00')
             print('Order created!')
         except Exception as e:
             print(str(e))
@@ -392,8 +414,9 @@ if __name__ == '__main__':
         print('8 - Добавить доставщика')
         print('9 - Найти продукты')
         print('10 - Цена заказа')
-        print('11 - приложение')
-        # print('11 - Статистика')
+        print('11 - Приложение с GUI (не работает)')
+        print('12 - Delivery_guy')
+        print('13 - Отправить заказ в обработку')
         print('0: выйти из программы')
         x = input('-->')
         x = int(x)
@@ -484,7 +507,9 @@ if __name__ == '__main__':
             q = input('Введите поисковый запрос \n -->')
 
             try:
-                print(order_manager._exec_select(f"select search_product({uid}, '{jwt}', '{q}')"))
+                res = order_manager._exec_select(f"select search_product({uid}, '{jwt}', '{q}')")
+                for r in res:
+                    print(r)
             except Exception as e:
                 print(str(e))
         elif x == 10:
@@ -495,6 +520,11 @@ if __name__ == '__main__':
                 print(str(e))
         elif x == 11:
             app_workflow()
+        elif x == 12:
+            delivery_guy()
+        elif x == 13:
+            q = input('Введите айди заказа \n -->')
+            print(order_manager.confirm_order(uid, jwt, q))
         else:
             break
 
