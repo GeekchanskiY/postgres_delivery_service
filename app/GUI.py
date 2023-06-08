@@ -95,6 +95,7 @@ class App(tk.Frame):
         listbox_products = tk.Listbox(product_window)
         listbox_products.pack()
         # self.user_master.
+        products = ['test', 'test', 'test']
         for product in products:
             listbox_products.insert(tk.END, product)
 

@@ -206,6 +206,66 @@ begin
 end;
 $$;
 
+create or replace function deliver_available_order(
+	uid int,
+	jwt varchar(255),
+	norder_id int
+) returns varchar(255)
+ security definer language plpgsql as $$
+declare 
+	is_allowed bool;
+	order_available int;
+	order_delivering int;
+begin
+	select check_user_access(uid, jwt, 'delivery_guy') into is_allowed;
+	if (is_allowed = false)
+	then
+		raise exception 'Not allowed!';
+	end if;
+	select state_id from order_states where state_name = 'in progress' into order_available;
+	if (order_available != (select state_id from orders where order_id = norder_id))
+	then 
+		raise exception 'Cant deliver this order!';
+	end if;
+	select state_id from order_states where state_name = 'delivering' into order_delivering;
+	update orders set state_id = order_delivering where order_id = norder_id;
+	update orders set delivery_guy = uid where order_id = norder_id;
+	return 'Delivering!';
+end;
+$$;
+
+create or replace function approve_available_order(
+	uid int,
+	jwt varchar(255),
+	norder_id int
+) returns varchar(255)
+ security definer language plpgsql as $$
+declare 
+	is_allowed bool;
+	order_available int;
+	order_delivering int;
+begin
+	select check_user_access(uid, jwt, 'user') into is_allowed;
+	if (is_allowed = false)
+	then
+		raise exception 'Not allowed!';
+	end if;
+	select state_id from order_states where state_name = 'delivering' into order_available;
+	if (order_available != (select state_id from orders where order_id = norder_id))
+	then 
+		raise exception 'Cant deliver this order!';
+	end if;
+	if (uid != (select customer_id from orders where order_id = norder_id))
+	then 
+		raise exception 'Not your order!';
+	end if;
+	select state_id from order_states where state_name = 'done' into order_delivering;
+	update orders set state_id = order_delivering where order_id = norder_id;
+	update orders set delivery_guy = null where order_id = norder_id;
+	return 'Done!';
+end;
+$$;
+
 create or replace function confirm_order(
 	uid int,
 	jwt varchar(255),

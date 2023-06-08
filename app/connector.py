@@ -301,6 +301,18 @@ class OrderConnector(CustomConnector):
         )
         return res
 
+    def deliver_available_order(self, user_id, jwt, order_id):
+        res = self._exec(
+            f"select deliver_available_order({user_id}, '{jwt}', {order_id})"
+        )
+        return res
+
+    def approve_available_order(self, user_id, jwt, order_id):
+        res = self._exec(
+            f"select approve_available_order({user_id}, '{jwt}', {order_id})"
+        )
+        return res
+
 
 def app_workflow():
     import tkinter as tk
@@ -319,8 +331,15 @@ def delivery_guy():
 
     dev_uid = delivery_manager._get_my_id()
     dev_jwt = delivery_manager.jwt.get_jwt()
-
+    print("available to deliver orders:")
     print(order_manager.get_available_orders(dev_uid, dev_jwt))
+
+    z = int(input("Вы хотите взять один из заказов в доставку? \n 1 - да \n 2 - нет \n -->"))
+    if z == 1:
+        q = input('Введите айди заказа который хотите доставить \n -->')
+        print(order_manager.deliver_available_order(dev_uid, dev_jwt, q))
+    else:
+        print('Возвращаюсь к обычному таймлайну')
 
 
 if __name__ == '__main__':
@@ -417,6 +436,7 @@ if __name__ == '__main__':
         print('11 - Приложение с GUI (не работает)')
         print('12 - Delivery_guy')
         print('13 - Отправить заказ в обработку')
+        print('14 - Подтвердить выполнение заказа')
         print('0: выйти из программы')
         x = input('-->')
         x = int(x)
@@ -525,6 +545,9 @@ if __name__ == '__main__':
         elif x == 13:
             q = input('Введите айди заказа \n -->')
             print(order_manager.confirm_order(uid, jwt, q))
+        elif x == 14:
+            q = input('Введите айди заказа \n -->')
+            print(order_manager.approve_available_order(uid, jwt, q))
         else:
             break
 

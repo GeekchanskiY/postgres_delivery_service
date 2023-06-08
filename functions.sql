@@ -439,6 +439,8 @@ declare
 	is_allowed bool;
 	new_p_id int;
 	new_o_id int;
+	new_o_status int;
+	basket_status int;
 begin
 	select check_user_access(publisher_id, jwt, 'user') into is_allowed;
 	if (is_allowed = false)
@@ -456,6 +458,11 @@ begin
 	if (new_o_id is null)
 	then
 		raise exception 'order does not exists!';
+	end if;
+	select state_name from order_states where state_name = 'basket' into basket_status;
+	if (basket_status != (select o.state_id from orders as o where o.order_id = new_order_id))
+	then 
+		raise exception 'Cant add product to order that is not at basket';
 	end if;
 	
 	insert into order_product(order_id, product_id, amount)
